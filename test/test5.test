@@ -1,0 +1,229 @@
+# include "../get_next_line.h"
+# include <stdio.h>
+# include <unistd.h>
+# include <string.h>
+# include <assert.h>
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
+# define RESET	"\033[0m"
+# define BOLD	"\033[1m"
+# define RED		"\033[31m"
+# define GREEN	"\033[32m"
+# define YELLOW		"\033[33m"
+# define BLUE	"\033[34m"
+# define PURPLE		"\033[35m"
+# define CYAN	"\033[36m"
+# define WHITE	"\033[37m"
+# define UNCOLOR	"\033[39m"
+
+void	print_result(int result)
+{
+	if (result == 1)
+		printf(CYAN"LINE HAS BEEN READ\n"UNCOLOR);
+	else if (result == 0)
+		printf(CYAN"READING COMPLETED\n"UNCOLOR);
+	else
+		printf(RED"ERROR OCCURED\n"UNCOLOR);
+}
+
+void	print_OK(int result)
+{
+	if (result != 0)
+		printf(RED"				KO!\n\n"UNCOLOR);
+	else
+		printf(GREEN"				OK!\n\n"UNCOLOR);
+}
+
+static void n_string_test(void)
+{
+	char 	*line;
+	int		out;
+	int		p[2];
+	int		fd;
+	int		result;
+
+	fd = 1;
+	out = dup(fd);
+	pipe(p);
+	dup2(p[1], fd);
+	write(fd, "\naaa\nbbb\n\nccc\nddd\n\n", 19);
+	dup2(out, fd);
+	close(p[1]);
+
+	printf("Input text: \n");
+	printf(YELLOW"[\naaa\nbbb\n\nccc\nddd\n\n]\n"UNCOLOR);
+
+	result = get_next_line(p[0], &line);
+	print_result(result);
+	printf("Expected: []	output: [%s]", line);
+	print_OK(strcmp(line, ""));
+	free(line);
+
+	result = get_next_line(p[0], &line);
+	print_result(result);
+	printf("Expected: [aaa]	output: [%s]", line);
+	print_OK(strcmp(line, "aaa"));
+	free(line);
+
+	result = get_next_line(p[0], &line);
+	print_result(result);
+	printf("Expected: [bbb]	output: [%s]", line);
+	print_OK(strcmp(line, "bbb"));
+	free(line);
+
+	result = get_next_line(p[0], &line);
+	print_result(result);
+	printf("Expected: []	output: [%s]", line);
+	print_OK(strcmp(line, ""));
+	free(line);
+
+	result = get_next_line(p[0], &line);
+	print_result(result);
+	printf("Expected: [ccc]	output: [%s]", line);
+	print_OK(strcmp(line, "ccc"));
+	free(line);
+
+	result = get_next_line(p[0], &line);
+	print_result(result);
+	printf("Expected: [ddd]	output: [%s]", line);
+	print_OK(strcmp(line, "ddd"));
+	free(line);
+
+	result = get_next_line(p[0], &line);
+	print_result(result);
+	printf("Expected: []	output: [%s]", line);
+	print_OK(strcmp(line, ""));
+	free(line);
+}
+
+static void	non_printable(void)
+{
+	char 	*line;
+	int		out;
+	int		p[2];
+	int		fd;
+	int	ret;
+
+	out = dup(1);
+	pipe(p);
+	printf("Input text: \n");
+	printf(YELLOW"[\t\t\v\t\r\t\t\200\300\t\t\n]\n\n"UNCOLOR);
+
+	fd = 1;
+	dup2(p[1], fd);
+	write(fd, "\t\t\v\t\r\t\t\200\300\t\t\n", 16);
+	close(p[1]);
+	dup2(out, fd);
+	ret = get_next_line(p[0], &line);
+	//printf("line: [%s]", line);
+	print_result(ret);
+	//printf("Expected: [\t\t\v\t\r\t\t\200\300\t\t]	output: [%s]", line);
+	print_OK(strcmp(line, "\t\t\v\t\r\t\t\200\300\t\t"));
+	free(line);
+}
+
+static void	meet_end_of_line_test(void)
+{
+	char	*line;
+	int		fd;
+	int		out;
+	int		p[2];
+	int		gnl_ret;
+
+	out = dup(1);
+	pipe(p);
+	printf("Input text: \n");
+	printf(YELLOW"[abc\n\n]\n\n"UNCOLOR);
+
+	fd = 1;
+	dup2(p[1], fd);
+	write(fd, "abc\n\n", 5);
+	close(p[1]);
+	dup2(out, fd);
+
+	/* Read abc and new line */
+	gnl_ret = get_next_line(p[0], &line);
+	print_result(gnl_ret);
+	assert(gnl_ret == 1);
+	//assert(strcmp(line, "abc") == 0);
+	printf("Expected: [abc]	output: [%s]\n", line);
+	print_OK(strcmp(line, "abc"));
+	free(line);
+
+	/* Read new line */
+	//printf("line: %s\n", line);
+	//printf("fd: %d\n", p[0]);
+	gnl_ret = get_next_line(p[0], &line);
+	//printf("return: %d\n", gnl_ret);
+	//printf("line: %s\n", line);
+	print_result(gnl_ret);
+	assert(gnl_ret == 1);
+	printf("Expected: []	output: [%s]\n", line);
+	assert(line == NULL || *line == '\0');
+
+	/* Read again, but meet EOF */
+	gnl_ret = get_next_line(p[0], &line);
+	print_result(gnl_ret);
+	assert(gnl_ret == 0);
+	assert(line == NULL || *line == '\0');
+
+	/* try to pass into function again */
+	gnl_ret = get_next_line(p[0], &line);
+	print_result(gnl_ret);
+	assert(gnl_ret == 0);
+	assert(line == NULL || *line == '\0');
+}
+
+static void	error_handling_test(void)
+{
+	char *linenull = NULL;
+	printf("Everything should display [-1] or [ERROR OCCURED]\n");
+	printf("Input text: - or + and line = NULL\n");
+
+	print_result(get_next_line(-99, NULL));
+	assert(get_next_line(-99, NULL) == -1);
+	print_result(get_next_line(-1, NULL));
+	assert(get_next_line(-1, NULL) == -1);
+	print_result(get_next_line(-10000, NULL));
+	assert(get_next_line(-10000, NULL) == -1);
+	print_result(get_next_line(1, NULL));
+	assert(get_next_line(1, NULL) == -1);
+	print_result(get_next_line(99, NULL));
+	assert(get_next_line(99, NULL) == -1);
+
+	print_result(get_next_line(-99, &linenull));
+	assert(get_next_line(-99, &linenull) == -1);
+	print_result(get_next_line(-1, &linenull));
+	assert(get_next_line(-1, &linenull) == -1);
+	print_result(get_next_line(-10000, &linenull));
+	assert(get_next_line(-10000, &linenull) == -1);
+
+	/* Not opened fd */
+	printf("\nInput text: Non opened file\n");
+	print_result(get_next_line(42, &linenull));
+	assert(get_next_line(42, &linenull) == -1);
+	print_result(get_next_line(30, &linenull));
+    assert(get_next_line(30, &linenull) == -1);
+}
+
+int main(void)
+{
+	printf(PURPLE"Meet end of line test\n"UNCOLOR);
+	meet_end_of_line_test();
+	printf(GREEN"				OK!\n"UNCOLOR);
+
+    printf(PURPLE"[n] string test\n"UNCOLOR);
+	n_string_test();
+	//printf(GREEN"				OK!\n"UNCOLOR);
+
+	printf(PURPLE"non printable char test\n"UNCOLOR);
+	non_printable();
+	//printf(GREEN"				OK!\n"UNCOLOR);
+
+    printf(PURPLE"Error handling test\n"UNCOLOR);
+	error_handling_test();
+	printf(GREEN"				OK!\n"UNCOLOR);
+}

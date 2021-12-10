@@ -1,0 +1,189 @@
+# include "../get_next_line.h"
+# include <stdio.h>
+# include <unistd.h>
+# include <string.h>
+# include <assert.h>
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <time.h>
+
+# define RESET	"\033[0m"
+# define BOLD	"\033[1m"
+# define RED		"\033[31m"
+# define GREEN	"\033[32m"
+# define YELLOW		"\033[33m"
+# define BLUE	"\033[34m"
+# define PURPLE		"\033[35m"
+# define CYAN	"\033[36m"
+# define WHITE	"\033[37m"
+# define UNCOLOR	"\033[39m"
+
+void	print_result(int result)
+{
+	if (result == 1)
+		printf(CYAN"LINE HAS BEEN READ\n"UNCOLOR);
+	else if (result == -1)
+		printf(RED"ERROR OCCURED\n"UNCOLOR);
+	else
+		printf(CYAN"READING COMPLETED\n"UNCOLOR);
+}
+
+void	print_OK(int result)
+{
+	if (result != 0)
+		printf(RED"				KO!\n\n"UNCOLOR);
+	else
+		printf(GREEN"				OK!\n\n"UNCOLOR);
+}
+
+static void	binary_test(void)
+{
+	char	*line;
+    int	fd;
+	int ret;
+    
+	fd = open("t1.out", O_RDONLY);
+	ret = get_next_line(fd, &line);
+	print_result(ret);
+	printf("Output: [%s]\n", line);
+	close(fd);
+}
+
+static void	big_string_test(void)
+{
+    char	*line;
+	int		out;
+	int		p[2];
+	int		len = 50;
+	char 	*str;
+
+	str = (char *)malloc(1000 * 1000);
+	*str = '\0';
+	while (len--)
+		strcat(str, "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur in leo dignissim, gravida leo id, imperdiet urna. Aliquam magna nunc, maximus quis eleifend et, scelerisque non dolor. Suspendisse augue augue, tempus");
+	out = dup(1);
+	pipe(p);
+	dup2(p[1], 1);
+
+	if (str)
+		write(1, str, strlen(str));
+	close(p[1]);
+	dup2(out, 1);
+	get_next_line(p[0], &line);
+	printf("Expected: [%s]\n\noutput: [%s]\n", str, line);
+	assert(strcmp(line, str) == 0);
+	free(line);
+}
+
+static void large_file_test(void)
+{
+    char	*line;
+    int	diff_file_size;
+	int	fd2;
+	int	fd;
+	int	fd3;
+    
+    system("mkdir -p sandbox");
+	system("openssl rand -out sandbox/large_file.txt -base64 $((50 * 1000 * 3/4)) 2> /dev/null");
+
+	fd = open("sandbox/large_file.txt", O_RDONLY);
+	fd2 = open("sandbox/large_file.txt.mine", O_CREAT | O_RDWR | O_TRUNC, 0755);
+	
+	clock_t start, end;
+	start = clock();
+	
+	while (get_next_line(fd, &line) == 1)
+	{
+	    write(fd2, line, strlen(line));
+	    write(fd2, "\n", 1);
+		free(line);
+	}
+	end = clock();
+  	printf("Time taken %lf\n", (double) (end-start) / CLOCKS_PER_SEC);
+	
+	close(fd);
+	close(fd2);
+
+	system("diff sandbox/large_file.txt sandbox/large_file.txt.mine > sandbox/large_file.diff");
+	fd3 = open("sandbox/large_file.diff", O_RDONLY);
+	diff_file_size = read(fd3, NULL, 10);
+	close(fd3);
+
+	struct stat st;
+	stat("sandbox/large_file.txt", &st);
+	int size = st.st_size;
+	printf("size theirs: %d\n", size);
+	stat("sandbox/large_file.txt.mine", &st);
+	int size2 = st.st_size;
+	printf("size mine: %d\n", size2);
+
+	//assert(diff_file_size == 0);
+}
+
+static void large_one_line_test(void)
+{
+    char	*line;
+	int	fd2;
+	int	fd;
+	int	fd3;
+	int	diff_file_size;
+
+	system("mkdir -p sandbox");
+	system("openssl rand -base64 $((30 * 1000 * 3/4)) | tr -d '\n' | tr -d '\r' > sandbox/one_big_fat_line.txt");
+	system("echo '\n' >> sandbox/one_big_fat_line.txt");
+
+	fd = open("sandbox/one_big_fat_line.txt", O_RDONLY);
+	fd2 = open("sandbox/one_big_fat_line.txt.mine", O_CREAT | O_RDWR | O_TRUNC, 0755);
+
+	clock_t start, end;
+	start = clock();
+	while (get_next_line(fd, &line) == 1)
+	{
+	    write(fd2, line, strlen(line));
+	    write(fd2, "\n", 1);
+		free(line);
+	}
+	end = clock();
+  	printf("Time taken %lf\n", (double) (end-start) / CLOCKS_PER_SEC);
+	
+	if (line)
+		write(fd2, line, strlen(line));
+	close(fd);
+	close(fd2);
+
+	system("diff sandbox/one_big_fat_line.txt sandbox/one_big_fat_line.txt.mine > sandbox/one_big_fat_line.diff");
+	fd3 = open("sandbox/one_big_fat_line.diff", O_RDONLY);
+	diff_file_size = read(fd3, NULL, 10);
+	close(fd3);
+
+	struct stat st;
+	stat("sandbox/one_big_fat_line.txt", &st);
+	int size = st.st_size;
+	printf("size theirs: %d\n", size);
+	stat("sandbox/one_big_fat_line.txt.mine", &st);
+	int size2 = st.st_size;
+	printf("size mine: %d\n", size2);
+	//assert(diff_file_size == 0);
+}
+
+int main(void)
+{
+	printf(PURPLE"Binary test\n"UNCOLOR);
+	binary_test();
+	printf("\n");
+	
+	printf(PURPLE"Big string test\n"UNCOLOR);
+	big_string_test();
+	printf("\n");
+	//printf(GREEN"				OK!\n"UNCOLOR);
+
+    printf(PURPLE"Large file test\n"UNCOLOR);
+	large_file_test();
+	printf(GREEN"				OK!\n"UNCOLOR);
+
+    printf(PURPLE"Large one line test\n"UNCOLOR);
+	large_one_line_test();
+	printf(GREEN"				OK!\n"UNCOLOR);
+}

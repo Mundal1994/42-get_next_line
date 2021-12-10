@@ -1,0 +1,172 @@
+# include "../get_next_line.h"
+# include <stdio.h>
+# include <unistd.h>
+# include <string.h>
+# include <assert.h>
+
+# define RESET	"\033[0m"
+# define BOLD	"\033[1m"
+# define RED		"\033[31m"
+# define GREEN	"\033[32m"
+# define YELLOW		"\033[33m"
+# define BLUE	"\033[34m"
+# define PURPLE		"\033[35m"
+# define CYAN	"\033[36m"
+# define WHITE	"\033[37m"
+# define UNCOLOR	"\033[39m"
+
+void	print_result(int result)
+{
+	if (result == 1)
+		printf(CYAN"LINE HAS BEEN READ\n"UNCOLOR);
+	else if (result == -1)
+		printf(RED"ERROR OCCURED\n"UNCOLOR);
+	else
+		printf(CYAN"READING COMPLETED\n"UNCOLOR);
+}
+
+void	print_OK(int result)
+{
+	if (result != 0)
+		printf(RED"				KO!\n\n"UNCOLOR);
+	else
+		printf(GREEN"				OK!\n\n"UNCOLOR);
+}
+
+static void	simple_4_test(void)
+{
+	char 	*line;
+	int		out;
+	int		p[2];
+	int		fd;
+
+	out = dup(1);
+	pipe(p);
+	printf("Input text: \n");
+	printf(YELLOW"[abcd\n]\n\n"UNCOLOR);
+
+	fd = 1;
+	dup2(p[1], fd);
+	write(fd, "abcd\n", 5);
+	close(p[1]);
+	dup2(out, fd);
+	get_next_line(p[0], &line);
+	printf("Expected: [abcd]	output: [%s]\n", line);
+	print_OK(strcmp(line, "abcd"));
+	free(line);
+}
+
+static void	simple_8_test(void)
+{
+	char 	*line;
+	int		out;
+	int		p[2];
+	int		fd;
+
+	out = dup(1);
+	pipe(p);
+	printf("Input text: \n");
+	printf(YELLOW"[abcdefgh\n]\n\n"UNCOLOR);
+
+	fd = 1;
+	dup2(p[1], fd);
+	write(fd, "abcdefgh\n", 9);
+	close(p[1]);
+	dup2(out, fd);
+	get_next_line(p[0], &line);
+	printf("Expected: [abcdefgh]	output: [%s]\n", line);
+	print_OK(strcmp(line, "abcdefgh"));
+	free(line);
+}
+
+static void	simple_16_test(void)
+{
+	char 	*line;
+	int		out;
+	int		p[2];
+	int		fd;
+
+	out = dup(1);
+	pipe(p);
+	printf("Input text: \n\n");
+	printf(YELLOW"[mnopqrstuvwxyzab\n]\n"UNCOLOR);
+
+
+	fd = 1;
+	dup2(p[1], fd);
+	write(fd, "mnopqrstuvwxyzab\n", 17);
+	close(p[1]);
+	dup2(out, fd);
+	get_next_line(p[0], &line);
+	printf("Expected: [mnopqrstuvwxyzab]	output: [%s]\n", line);
+	print_OK(strcmp(line, "mnopqrstuvwxyzab"));
+	free(line);
+}
+
+static void	easy_string_test(void)
+{
+	char 	*line;
+	int		out;
+	int		p[2];
+	int		fd;
+	int		result;
+
+	fd = 1;
+	out = dup(fd);
+	pipe(p);
+	dup2(p[1], fd);
+	write(fd, "aaa\nbbb\nccc\nddd\n", 16);
+	dup2(out, fd);
+	close(p[1]);
+
+	printf("Input text: \n");
+	printf(YELLOW"[aaa\nbbb\nccc\nddd\n]\n\n"UNCOLOR);
+
+	result = get_next_line(p[0], &line);
+	print_result(result);
+	printf("Expected: [aaa]	output: [%s]", line);
+	print_OK(strcmp(line, "aaa"));
+	free(line);
+
+	result = get_next_line(p[0], &line);
+	print_result(result);
+	printf("Expected: [bbb]	output: [%s]", line);
+	print_OK(strcmp(line, "bbb"));
+	free(line);
+
+	result = get_next_line(p[0], &line);
+	print_result(result);
+	printf("Expected: [ccc]	output: [%s]", line);
+	print_OK(strcmp(line, "ccc"));
+	free(line);
+
+	result = get_next_line(p[0], &line);
+	print_result(result);
+	printf("Expected: [ddd]	output: [%s]", line);
+	print_OK(strcmp(line, "ddd"));
+	free(line);
+
+	result = get_next_line(p[0], &line);
+	print_result(result);
+	//printf("Expected: []	output: [%s]", line);
+	//print_OK(strcmp(line, ""));
+}
+
+int main(void)
+{
+	printf(PURPLE"Simple 4 test\n"UNCOLOR);
+	simple_4_test();
+	//printf(GREEN"				OK!\n"UNCOLOR);
+
+	printf(PURPLE"Simple 8 test\n"UNCOLOR);
+	simple_8_test();
+	//printf(GREEN"				OK!\n"UNCOLOR);
+
+	printf(PURPLE"Simple 16 test\n"UNCOLOR);
+	simple_16_test();
+	//printf(GREEN"				OK!\n"UNCOLOR);
+
+    printf(PURPLE"Easy string test\n"UNCOLOR);
+	easy_string_test();
+	//printf(GREEN"				OK!\n"UNCOLOR);
+}

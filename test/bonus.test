@@ -1,0 +1,149 @@
+# include "../get_next_line.h"
+# include <stdio.h>
+# include <unistd.h>
+# include <string.h>
+# include <assert.h>
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
+# define RESET	"\033[0m"
+# define BOLD	"\033[1m"
+# define RED		"\033[31m"
+# define GREEN	"\033[32m"
+# define YELLOW		"\033[33m"
+# define BLUE	"\033[34m"
+# define PURPLE		"\033[35m"
+# define CYAN	"\033[36m"
+# define WHITE	"\033[37m"
+# define UNCOLOR	"\033[39m"
+
+void	print_result(int result)
+{
+	if (result == 1)
+		printf(CYAN"LINE HAS BEEN READ\n"UNCOLOR);
+	else if (result == 0)
+		printf(CYAN"READING COMPLETED\n"UNCOLOR);
+	else
+		printf(RED"ERROR OCCURED\n"UNCOLOR);
+}
+
+void	print_OK(int result)
+{
+	if (result == 1)
+		printf(RED"				KO!\n\n"UNCOLOR);
+	else
+		printf(GREEN"				OK!\n\n"UNCOLOR);
+}
+
+static void	bonus_test(void)
+{
+    char	*line_fd0;
+	int		p_fd0[2];
+	int		fd0 = 0;
+	int		out_fd0 = dup(fd0);
+
+	char	*line_fd1;
+	int		p_fd1[2];
+	int		fd1 = 1;
+	int		out_fd1 = dup(fd1);
+
+	char	*line_fd2;
+	int		p_fd2[2];
+	int		fd2 = 2;
+	int		out_fd2 = dup(fd2);
+
+	char	*line_fd3;
+	int		p_fd3[2];
+	int		fd3 = 3;
+	int		out_fd3 = dup(fd3);
+
+	printf("Input text 1: \n");
+	printf(YELLOW"[aaa\nbbb\n]\n"UNCOLOR);
+	printf("Input text 2: \n");
+	printf(YELLOW"[111\n222\n]\n"UNCOLOR);
+	printf("Input text 3: \n");
+	printf(YELLOW"[www\nzzz\n]\n"UNCOLOR);
+	printf("Input text 4: \n");
+	printf(YELLOW"[888\n999\n]\n\n"UNCOLOR);
+
+	pipe(p_fd0);
+	dup2(p_fd0[1], fd0);
+	write(fd0, "aaa\nbbb\n", 8);
+	dup2(out_fd0, fd0);
+	close(p_fd0[1]);
+
+	pipe(p_fd1);
+	dup2(p_fd1[1], fd1);
+	write(fd1, "111\n222\n", 8);
+	dup2(out_fd1, fd1);
+	close(p_fd1[1]);
+
+	pipe(p_fd2);
+	dup2(p_fd2[1], fd2);
+	write(fd2, "www\nzzz\n", 8);
+	dup2(out_fd2, fd2);
+	close(p_fd2[1]);
+
+	pipe(p_fd3);
+	dup2(p_fd3[1], fd3);
+	write(fd3, "888\n999\n", 8);
+	dup2(out_fd3, fd3);
+	close(p_fd3[1]);
+
+	get_next_line(p_fd0[0], &line_fd0);
+	printf("Expected: [aaa]	output: [%s]", line_fd0);
+	print_OK(strcmp(line_fd0, "aaa"));
+	//assert(strcmp(line_fd0, "aaa") == 0);
+	free(line_fd0);
+
+	get_next_line(p_fd1[0], &line_fd1);
+	printf("Expected: [111]	output: [%s]", line_fd1);
+	print_OK(strcmp(line_fd1, "111"));
+	assert(strcmp(line_fd1, "111") == 0);
+	free(line_fd1);
+
+	get_next_line(p_fd2[0], &line_fd2);
+	printf("Expected: [www]	output: [%s]", line_fd2);
+	print_OK(strcmp(line_fd2, "www"));
+	assert(strcmp(line_fd2, "www") == 0);
+	free(line_fd2);
+
+	get_next_line(p_fd3[0], &line_fd3);
+	printf("Expected: [888]	output: [%s]", line_fd3);
+	print_OK(strcmp(line_fd3, "888"));
+	assert(strcmp(line_fd3, "888") == 0);
+	free(line_fd3);
+
+	get_next_line(p_fd0[0], &line_fd0);
+	printf("Expected: [bbb]	output: [%s]", line_fd0);
+	print_OK(strcmp(line_fd0, "bbb"));
+	assert(strcmp(line_fd0, "bbb") == 0);
+	free(line_fd0);
+
+	get_next_line(p_fd1[0], &line_fd1);
+	printf("Expected: [222]	output: [%s]", line_fd1);
+	print_OK(strcmp(line_fd1, "222"));
+	assert(strcmp(line_fd1, "222") == 0);
+	free(line_fd1);
+
+	get_next_line(p_fd2[0], &line_fd2);
+	printf("Expected: [zzz]	output: [%s]", line_fd2);
+	print_OK(strcmp(line_fd2, "zzz"));
+	assert(strcmp(line_fd2, "zzz") == 0);
+	free(line_fd2);
+
+	get_next_line(p_fd3[0], &line_fd3);
+	printf("Expected: [999]	output: [%s]", line_fd3);
+	print_OK(strcmp(line_fd3, "999"));
+	assert(strcmp(line_fd3, "999") == 0);
+	free(line_fd3);
+}
+
+int main(void)
+{
+    printf(PURPLE"Bonus test\n"UNCOLOR);
+	bonus_test();
+	printf(GREEN"				OK!\n"UNCOLOR);
+}

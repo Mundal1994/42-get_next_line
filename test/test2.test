@@ -1,0 +1,307 @@
+# include "../get_next_line.h"
+# include <stdio.h>
+# include <unistd.h>
+# include <string.h>
+# include <assert.h>
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
+# define RESET	"\033[0m"
+# define BOLD	"\033[1m"
+# define RED		"\033[31m"
+# define GREEN	"\033[32m"
+# define YELLOW		"\033[33m"
+# define BLUE	"\033[34m"
+# define PURPLE		"\033[35m"
+# define CYAN	"\033[36m"
+# define WHITE	"\033[37m"
+# define UNCOLOR	"\033[39m"
+
+void	print_result(int result)
+{
+	if (result == 1)
+		printf(CYAN"LINE HAS BEEN READ\n"UNCOLOR);
+	else if (result == -1)
+		printf(RED"ERROR OCCURED\n"UNCOLOR);
+	else
+		printf(CYAN"READING COMPLETED\n"UNCOLOR);
+}
+
+void	print_OK(int result)
+{
+	if (result != 0)
+		printf(RED"				KO!\n\n"UNCOLOR);
+	else
+		printf(GREEN"				OK!\n\n"UNCOLOR);
+}
+
+static void letter_word_4_test(void)
+{
+    char	*line;
+	int		fd;
+	int		ret;
+	int		out;
+	int		p[2];
+
+    out = dup(1);
+	pipe(p);
+	printf("Input text: \n");
+	printf(YELLOW"[abcd\nefgh\nijkl\nmnop\nqrst\nuvwx\nyzab\n]\n\n"UNCOLOR);
+
+	fd = 1;
+	dup2(p[1], fd);
+	write(fd, "abcd\n", 5);
+	write(fd, "efgh\n", 5);
+	write(fd, "ijkl\n", 5);
+	write(fd, "mnop\n", 5);
+	write(fd, "qrst\n", 5);
+	write(fd, "uvwx\n", 5);
+	write(fd, "yzab\n", 5);
+	close(p[1]);
+	dup2(out, fd);
+	ret = get_next_line(p[0], &line);
+	print_result(ret);
+	printf("Expected: [abcd]	output: [%s]", line);
+	print_OK(strcmp(line, "abcd"));
+	//assert(strcmp(line, "abcd") == 0);
+	//assert(ret == 1);
+	free(line);
+
+	ret = get_next_line(p[0], &line);
+	print_result(ret);
+	printf("Expected: [efgh]	output: [%s]", line);
+	print_OK(strcmp(line, "efgh"));
+	//assert(strcmp(line, "efgh") == 0);
+	//assert(ret == 1);
+	free(line);
+
+	ret = get_next_line(p[0], &line);
+	print_result(ret);
+	printf("Expected: [ijkl]	output: [%s]", line);
+	print_OK(strcmp(line, "ijkl"));
+	//assert(strcmp(line, "ijkl") == 0);
+	//assert(ret == 1);
+	free(line);
+
+	ret = get_next_line(p[0], &line);
+	print_result(ret);
+	printf("Expected: [mnop]	output: [%s]", line);
+	print_OK(strcmp(line, "mnop"));
+	//assert(strcmp(line, "mnop") == 0);
+	//assert(ret == 1);
+	free(line);
+
+	ret = get_next_line(p[0], &line);
+	print_result(ret);
+	printf("Expected: [qrst]	output: [%s]", line);
+	print_OK(strcmp(line, "qrst"));
+	//assert(strcmp(line, "qrst") == 0);
+	//assert(ret == 1);
+	free(line);
+
+	ret = get_next_line(p[0], &line);
+	print_result(ret);
+	printf("Expected: [uvwx]	output: [%s]", line);
+	print_OK(strcmp(line, "uvwx"));
+	//assert(strcmp(line, "uvwx") == 0);
+	//assert(ret == 1);
+	free(line);
+
+	ret = get_next_line(p[0], &line);
+	print_result(ret);
+	printf("Expected: [yzab]	output: [%s]", line);
+	print_OK(strcmp(line, "yzab"));
+	//assert(strcmp(line, "yzab") == 0);
+	//assert(ret == 0);
+	free(line);
+	ret = get_next_line(p[0], &line);
+	print_result(ret);
+	//assert(ret == 0);
+}
+
+static void	letter_word_8_test(void)
+{
+	char	*line;
+	int		fd;
+	int		out;
+	int		p[2];
+	int	ret;
+
+	out = dup(1);
+	pipe(p);
+
+	fd = 1;
+	dup2(p[1], fd);
+	write(fd, "abcdefgh\n", 9);
+	write(fd, "ijklmnop\n", 9);
+	write(fd, "qrstuvwx\n", 9);
+	write(fd, "yzabcdef\n", 9);
+	write(fd, "ghijklmn\n", 9);
+	write(fd, "opqrstuv\n", 9);
+	write(fd, "wxyzabcd\n", 9);
+	close(p[1]);
+	dup2(out, fd);
+	printf("Input text: \n");
+	printf(YELLOW"[abcdefgh\nijklmnop\nqrstuvwx\nyzabcdef\nghijklmn\nopqrstuv\nwxyzabcd\n]\n\n"UNCOLOR);
+
+	ret = get_next_line(p[0], &line);
+	print_result(ret);
+	printf("Expected: [abcdefgh]	output: [%s]", line);
+	print_OK(strcmp(line, "abcdefgh"));
+	//assert(strcmp(line, "abcdefgh") == 0);
+	//assert(ret == 1);
+	free(line);
+
+	ret = get_next_line(p[0], &line);
+	print_result(ret);
+	printf("Expected: [ijklmnop]	output: [%s]", line);
+	print_OK(strcmp(line, "ijklmnop"));
+	//assert(strcmp(line, "ijklmnop") == 0);
+	//assert(ret == 1);
+	free(line);
+
+	ret = get_next_line(p[0], &line);
+	print_result(ret);
+	printf("Expected: [qrstuvwx]	output: [%s]", line);
+	print_OK(strcmp(line, "qrstuvwx"));
+	//assert(strcmp(line, "qrstuvwx") == 0);
+	//assert(ret == 1);
+	free(line);
+
+	ret = get_next_line(p[0], &line);
+	print_result(ret);
+	printf("Expected: [yzabcdef]	output: [%s]", line);
+	print_OK(strcmp(line, "yzabcdef"));
+	//assert(strcmp(line, "yzabcdef") == 0);
+	//assert(ret == 1);
+	free(line);
+
+	ret = get_next_line(p[0], &line);
+	print_result(ret);
+	printf("Expected: [ghijklmn]	output: [%s]", line);
+	print_OK(strcmp(line, "ghijklmn"));
+	//assert(strcmp(line, "ghijklmn") == 0);
+	//assert(ret == 1);
+	free(line);
+
+	ret = get_next_line(p[0], &line);
+	print_result(ret);
+	printf("Expected: [opqrstuv]	output: [%s]", line);
+	print_OK(strcmp(line, "opqrstuv"));
+	//assert(strcmp(line, "opqrstuv") == 0);
+	//assert(ret == 1);
+	free(line);
+
+	ret = get_next_line(p[0], &line);
+	print_result(ret);
+	printf("Expected: [wxyzabcd]	output: [%s]", line);
+	print_OK(strcmp(line, "wxyzabcd"));
+	//assert(strcmp(line, "wxyzabcd") == 0);
+	//assert(ret == 0);
+	free(line);
+	ret = get_next_line(p[0], &line);
+	print_result(ret);
+	//assert(ret == 0);
+}
+
+static void letter_word_16_test(void)
+{
+    char	*line;
+	int		fd;
+	int		ret;
+	int		out;
+	int		p[2];
+
+    out = dup(1);
+	pipe(p);
+
+	fd = 1;
+	dup2(p[1], fd);
+	write(fd, "abcdefghijklmnop\n", 17);
+	write(fd, "qrstuvwxyzabcdef\n", 17);
+	write(fd, "ghijklmnopqrstuv\n", 17);
+	write(fd, "wxyzabcdefghijkl\n", 17);
+	write(fd, "mnopqrstuvwxyzab\n", 17);
+	write(fd, "cdefghijklmnopqr\n", 17);
+	write(fd, "stuvwxzabcdefghi\n", 17);
+	close(p[1]);
+	dup2(out, fd);
+	printf("Input text: \n");
+	printf(YELLOW"[abcdefghijklmnop\nqrstuvwxyzabcdef\nghijklmnopqrstuv\nwxyzabcdefghijkl\nmnopqrstuvwxyzab\ncdefghijklmnopqr\nstuvwxzabcdefghi\n]\n\n"UNCOLOR);
+
+	ret = get_next_line(p[0], &line);
+	print_result(ret);
+	printf("Expected: [abcdefghijklmnop]	output: [%s]", line);
+	print_OK(strcmp(line, "abcdefghijklmnop"));
+	//assert(strcmp(line, "abcdefghijklmnop") == 0);
+	//assert(ret == 1);
+	free(line);
+
+	ret = get_next_line(p[0], &line);
+	print_result(ret);
+	printf("Expected: [qrstuvwxyzabcdef]	output: [%s]", line);
+	print_OK(strcmp(line, "qrstuvwxyzabcdef"));
+	//assert(strcmp(line, "qrstuvwxyzabcdef") == 0);
+	//assert(ret == 1);
+	free(line);
+
+	ret = get_next_line(p[0], &line);
+	print_result(ret);
+	printf("Expected: [ghijklmnopqrstuv]	output: [%s]", line);
+	print_OK(strcmp(line, "ghijklmnopqrstuv"));
+	//assert(strcmp(line, "ghijklmnopqrstuv") == 0);
+	//assert(ret == 1);
+	free(line);
+
+	ret = get_next_line(p[0], &line);
+	print_result(ret);
+	printf("Expected: [wxyzabcdefghijkl]	output: [%s]", line);
+	print_OK(strcmp(line, "wxyzabcdefghijkl"));
+	//assert(strcmp(line, "wxyzabcdefghijkl") == 0);
+	//assert(ret == 1);
+	free(line);
+
+	ret = get_next_line(p[0], &line);
+	print_result(ret);
+	printf("Expected: [mnopqrstuvwxyzab]	output: [%s]", line);
+	print_OK(strcmp(line, "mnopqrstuvwxyzab"));
+	//assert(strcmp(line, "mnopqrstuvwxyzab") == 0);
+	//assert(ret == 1);
+	free(line);
+
+	ret = get_next_line(p[0], &line);
+	print_result(ret);
+	printf("Expected: [cdefghijklmnopqr]	output: [%s]", line);
+	print_OK(strcmp(line, "cdefghijklmnopqr"));
+	//assert(strcmp(line, "cdefghijklmnopqr") == 0);
+	//assert(ret == 1);
+	free(line);
+
+	ret = get_next_line(p[0], &line);
+	print_result(ret);
+	printf("Expected: [stuvwxzabcdefghi]	output: [%s]", line);
+	print_OK(strcmp(line, "stuvwxzabcdefghi"));
+	//assert(strcmp(line, "stuvwxzabcdefghi") == 0);
+	free(line);
+	//assert(ret == 0);
+	ret = get_next_line(p[0], &line);
+	print_result(ret);
+	//assert(ret == 0);
+}
+
+int main(void)
+{
+    printf(PURPLE"4 letter word test\n"UNCOLOR);
+	letter_word_4_test();
+	//printf(GREEN"				OK!\n"UNCOLOR);
+
+    printf(PURPLE"8 letter word test\n"UNCOLOR);
+	letter_word_8_test();
+	//printf(GREEN"				OK!\n"UNCOLOR);
+
+    printf(PURPLE"16 letter word test\n"UNCOLOR);
+	letter_word_16_test();
+	//printf(GREEN"				OK!\n"UNCOLOR);
+}

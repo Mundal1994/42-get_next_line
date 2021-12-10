@@ -1,0 +1,47 @@
+# include "../get_next_line.h"
+# include <stdio.h>
+# include <unistd.h>
+# include <string.h>
+# include <assert.h>
+
+# define RESET	"\033[0m"
+# define BOLD	"\033[1m"
+# define RED		"\033[31m"
+# define GREEN	"\033[32m"
+# define YELLOW		"\033[33m"
+# define BLUE	"\033[34m"
+# define PURPLE		"\033[35m"
+# define CYAN	"\033[36m"
+# define WHITE	"\033[37m"
+# define UNCOLOR	"\033[39m"
+
+void	print_result(int result)
+{
+	if (result == 1)
+		printf(CYAN"LINE HAS BEEN READ\n"UNCOLOR);
+	else if (result == -1)
+		printf(RED"ERROR OCCURED\n"UNCOLOR);
+	else
+		printf(CYAN"READING COMPLETED\n"UNCOLOR);
+}
+/*
+void	print_OK(int result)
+{
+	if (result != 0)
+		printf(RED"				KO!\n\n"UNCOLOR);
+	else
+		printf(GREEN"				OK!\n\n"UNCOLOR);
+}
+*/
+
+int main(void)
+{
+	char	*line;
+	int		ret;
+	
+	ret = get_next_line(0, &line);
+	printf("Output: [%s]\n", line);
+	free(line);
+	//print_result(ret);
+    return (0);
+}
