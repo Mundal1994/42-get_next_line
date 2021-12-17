@@ -6,42 +6,54 @@
 /*   By: marvin <marvin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/11/22 09:36:16 by molesen           #+#    #+#             */
-/*   Updated: 2021/12/08 17:53:26 by molesen          ###   ########.fr       */
+/*   Updated: 2021/12/16 15:45:50 by molesen          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "get_next_line.h"
 
-static int	ft_str_to_line(const int fd, char **str, char **line)
+static int	ft_not_end_of_str(const int fd, char **str, char **line, int len)
 {
 	char	*temp;
-	int		len;
+
+	*line = ft_strsub(str[fd], 0, len);
+	if (!(*line))
+	{
+		str = ft_free2d(str);
+		return (ERROR);
+	}
+	temp = str[fd];
+	str[fd] = ft_strdup(&temp[len + 1]);
+	if (!str[fd])
+		return (ERROR);
+	ft_strdel(&temp);
+	if (str[fd][0] == '\0')
+		ft_strdel(&str[fd]);
+	return (0);
+}
+
+static int	ft_str_to_line(const int fd, char **str, char **line)
+{
+	int	len;
 
 	len = ft_strlen_stop(str[fd], '\n');
 	if (str[fd][len] == '\0')
 	{
-		line[0] = ft_strdup(str[fd]);
-		if (!line[0])
-			return (-1);
+		*line = ft_strdup(str[fd]);
+		if (!(*line))
+		{
+			str = ft_free2d(str);
+			return (ERROR);
+		}
 		ft_strdel(&str[fd]);
 	}
 	else
-	{
-		line[0] = ft_strsub(str[fd], 0, len);
-		if (!line[0])
-			return (-1);
-		temp = str[fd];
-		str[fd] = ft_strdup(&temp[len + 1]);
-		if (!str[fd])
-			return (-1);
-		ft_strdel(&temp);
-		if (str[fd][0] == '\0')
-			ft_strdel(&str[fd]);
-	}
+		if (ft_not_end_of_str(fd, str, line, len) == ERROR)
+			return (ERROR);
 	return (0);
 }
 
-static int	ft_buf_to_str(const int fd, char **str, char *buf)
+static int	ft_buf_to_str(const int fd, char **str, char *buf, char **line)
 {
 	char	*temp;
 
@@ -50,42 +62,40 @@ static int	ft_buf_to_str(const int fd, char **str, char *buf)
 		temp = str[fd];
 		str[fd] = ft_strjoin(temp, buf);
 		ft_strdel(&temp);
+		if (!str[fd])
+		{
+			ft_strdel(&str[fd]);
+			return (ERROR);
+		}
 	}
 	else
 	{
 		str[fd] = ft_strdup(buf);
 		if (!str[fd])
-			return (-1);
+			return (ERROR);
 	}
+	if (ft_strchr(str[fd], '\n') != NULL)
+		if (ft_str_to_line(fd, str, line) == ERROR)
+			return (ERROR);
 	return (0);
 }
 
-static int	ft_binary_check(char *buf, char **line)
+static int	ft_binary_check(char *buf, char *str)
 {
-	int	count;
 	int	i;
 
-	count = 1;
 	i = 0;
 	while (buf[i] != '\0')
 	{
-		if (ft_isascii(buf[i]) == 1)
+		if (ft_isascii(buf[i]) == 1 || ft_isxdigit(buf[i]) == 1)
+			return (FALSE);
+		if (ft_isoctal(buf[i]) == 1)
 			return (FALSE);
 		i++;
 	}
-	line[0] = NULL;
+	if (*str)
+		ft_strdel(&str);
 	return (TRUE);
-}
-
-static int	ft_find_n(char *buf)
-{
-	while (*buf)
-	{
-		if (*buf == '\n')
-			return (TRUE);
-		buf++;
-	}
-	return (FALSE);
 }
 
 int	get_next_line(const int fd, char **line)
@@ -94,25 +104,24 @@ int	get_next_line(const int fd, char **line)
 	char		buf[BUFF_SIZE + 1];
 	int			ret;
 
-	if (fd <= -1 || fd > FD_SIZE || !line || BUFF_SIZE < 1)
-		return (-1);
-	ret = read(fd, buf, BUFF_SIZE);
-	while (ret > 0)
+	if (fd <= -1 || fd >= FD_SIZE || !line || BUFF_SIZE < 1)
+		return (ERROR);
+	*line = NULL;
+	while ((!str[fd] || ft_strchr(str[fd], '\n') == NULL) && !(*line))
 	{
-		buf[ret] = '\0';
-		if (ft_binary_check(buf, line) == TRUE)
-			return (0);
-		if (ft_buf_to_str(fd, str, buf) == -1)
-			return (-1);
-		if (fd == 0 && ft_find_n(buf) == TRUE)
-			break ;
 		ret = read(fd, buf, BUFF_SIZE);
+		if (ret <= 0)
+			break ;
+		buf[ret] = '\0';
+		if (ft_binary_check(buf, str[fd]) == TRUE)
+			return (0);
+		if (ft_buf_to_str(fd, str, buf, line) == ERROR)
+			return (ERROR);
 	}
-	if (ret == -1)
-		return (-1);
-	if (ret == 0 && !str[fd])
+	if ((ret == 0 && !str[fd]) && !(*line))
 		return (0);
-	if (ft_str_to_line(fd, str, line) == -1)
-		return (-1);
+	if (!(*line))
+		if (ret == -1 || ft_str_to_line(fd, str, line) == ERROR)
+			return (ERROR);
 	return (1);
 }

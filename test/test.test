@@ -12,7 +12,7 @@ DEL += $(SL)*.o
 
 SL = ../
 CL = clang
-CC = -Wall -Wextra -Werror
+CC = -g -Wall -Wextra -Werror
 LIB = -I $(SL)libft/includes
 LIBFT = -I $(SL)libft/includes -L $(SL)libft/ -lft
 MAKELIB = make -C $(SL)libft/ fclean && make -C $(SL)libft/

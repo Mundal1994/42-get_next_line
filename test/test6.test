@@ -38,19 +38,6 @@ void	print_OK(int result)
 		printf(GREEN"				OK!\n\n"UNCOLOR);
 }
 
-static void	binary_test(void)
-{
-	char	*line;
-    int	fd;
-	int ret;
-    
-	fd = open("t1.out", O_RDONLY);
-	ret = get_next_line(fd, &line);
-	print_result(ret);
-	printf("Output: [%s]\n", line);
-	close(fd);
-}
-
 static void	big_string_test(void)
 {
     char	*line;
@@ -72,7 +59,7 @@ static void	big_string_test(void)
 	close(p[1]);
 	dup2(out, 1);
 	get_next_line(p[0], &line);
-	printf("Expected: [%s]\n\noutput: [%s]\n", str, line);
+	//printf("Expected: [%s]\n\noutput: [%s]\n", str, line);
 	assert(strcmp(line, str) == 0);
 	free(line);
 }
@@ -114,12 +101,12 @@ static void large_file_test(void)
 	struct stat st;
 	stat("sandbox/large_file.txt", &st);
 	int size = st.st_size;
-	printf("size theirs: %d\n", size);
+	printf("size orig: %d\n", size);
 	stat("sandbox/large_file.txt.mine", &st);
 	int size2 = st.st_size;
 	printf("size mine: %d\n", size2);
 
-	//assert(diff_file_size == 0);
+	assert(diff_file_size == 0);
 }
 
 static void large_one_line_test(void)
@@ -161,29 +148,76 @@ static void large_one_line_test(void)
 	struct stat st;
 	stat("sandbox/one_big_fat_line.txt", &st);
 	int size = st.st_size;
-	printf("size theirs: %d\n", size);
+	printf("size orig: %d\n", size);
 	stat("sandbox/one_big_fat_line.txt.mine", &st);
 	int size2 = st.st_size;
 	printf("size mine: %d\n", size2);
 	//assert(diff_file_size == 0);
 }
 
-int main(void)
+static void	bible_text_test(void)
 {
-	printf(PURPLE"Binary test\n"UNCOLOR);
-	binary_test();
-	printf("\n");
+	char	*line;
+	int	fd2;
+	int	fd;
+	int	fd3;
+	int	diff_file_size;
+
+	//system("mkdir -p sandbox");
+
+	fd = open("sandbox/test_bible.txt", O_RDONLY);
+	fd2 = open("sandbox/test_bible.txt.mine", O_CREAT | O_RDWR | O_TRUNC, 0755);
+
+	clock_t start, end;
+	start = clock();
+	while (get_next_line(fd, &line) == 1)
+	{
+	    write(fd2, line, strlen(line));
+	    write(fd2, "\n", 1);
+		free(line);
+	}
+	end = clock();
+  	printf("Time taken %lf\n", (double) (end-start) / CLOCKS_PER_SEC);
 	
+	if (line)
+		write(fd2, line, strlen(line));
+	close(fd);
+	close(fd2);
+
+	system("diff sandbox/test_bible.txt sandbox/test_bible.txt.mine > sandbox/test_bible.diff");
+	fd3 = open("sandbox/test_bible.diff", O_RDONLY);
+	diff_file_size = read(fd3, NULL, 10);
+	close(fd3);
+
+	struct stat st;
+	stat("sandbox/test_bible.txt", &st);
+	int size = st.st_size;
+	printf("size orig: %d\n", size);
+	stat("sandbox/test_bible.txt.mine", &st);
+	int size2 = st.st_size;
+	printf("size mine: %d\n", size2);
+	//assert(diff_file_size == 0);
+}
+
+int main(void)
+{	
 	printf(PURPLE"Big string test\n"UNCOLOR);
 	big_string_test();
 	printf("\n");
-	//printf(GREEN"				OK!\n"UNCOLOR);
+	printf(GREEN"				OK!\n"UNCOLOR);
 
     printf(PURPLE"Large file test\n"UNCOLOR);
 	large_file_test();
-	printf(GREEN"				OK!\n"UNCOLOR);
+	printf("\n");
+	//printf(GREEN"				OK!\n"UNCOLOR);
 
     printf(PURPLE"Large one line test\n"UNCOLOR);
 	large_one_line_test();
-	printf(GREEN"				OK!\n"UNCOLOR);
+	printf("\n");
+	//printf(GREEN"				OK!\n"UNCOLOR);
+
+	printf(PURPLE"Bible text test\n"UNCOLOR);
+	bible_text_test();
+	printf("\n");
+	//printf(GREEN"				OK!\n"UNCOLOR);
 }

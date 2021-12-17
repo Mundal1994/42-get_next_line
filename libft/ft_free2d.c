@@ -14,13 +14,14 @@
 
 char	**ft_free2d(char **dest)
 {	
-	size_t	str;
+	size_t	i;
 
-	str = 0;
-	while (dest[str] != 0)
+	i = 0;
+	while (dest[i] != 0)
 	{
-		ft_strdel(&dest[str]);
-		str++;
+		ft_strdel(&dest[i]);
+		i++;
 	}
+	free(dest);
 	return (NULL);
 }

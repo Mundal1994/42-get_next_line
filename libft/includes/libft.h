@@ -6,7 +6,7 @@
 /*   By: marvin <marvin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/11/01 12:16:34 by molesen           #+#    #+#             */
-/*   Updated: 2021/11/26 13:18:36 by molesen          ###   ########.fr       */
+/*   Updated: 2021/12/15 09:53:41 by molesen          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,6 +31,8 @@ int		ft_isalpha(int ch);
 int		ft_isascii(int ch);
 int		ft_isdigit(int ch);
 int		ft_isprint(int ch);
+int		ft_isxdigit(int ch);
+int		ft_isoctal(long nbr);
 void	*ft_memccpy(void *dst, const void *src, int c,
 			size_t n);
 void	*ft_memchr(const void *str, int c, size_t n);

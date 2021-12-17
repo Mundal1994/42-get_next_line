@@ -41,10 +41,11 @@ int main(int argc, char **argv)
 {
 	if (argc == 2)
 	{
+		
 		char	*line;
 		int		fd;
 		int		ret;
-	
+
 		fd = open(argv[1], O_RDONLY);
 		ret = get_next_line(fd, &line);
 		while (ret > 0)
@@ -54,6 +55,13 @@ int main(int argc, char **argv)
 			ret = get_next_line(fd, &line);
 		}
 		print_result(ret);
+		/*char		*line = NULL;
+		int			fd = open(argv[1], O_RDONLY);
+
+		get_next_line(fd, &line);
+		close(fd);
+		printf("%s", line);*/
+		//sleep(15);
 	}
     return (0);
 }
