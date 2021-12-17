@@ -67,5 +67,27 @@ al: t1 t2 t3 t4 t5 t6 b clean
 
 all: lib t1 t2 t3 t4 t5 t6 b clean
 
-re: fclean all
+run3:
+	./t3.out txt/txt1.txt
+	./t3.out txt/txt2.txt
+	./t3.out txt/txt3.txt
+	./t3.out txt/txt4.txt
+	./t3.out txt/txt5.txt
+	./t3.out txt/txt6.txt
+	./t3.out txt/txt7.txt
+	./t3.out txt/txt8.txt
+	./t3.out txt/txt9.txt
+	./t3.out txt/txt10.txt
+	./t3.out txt/txt11.txt
+	./t3.out txt/txt12.txt
+	./t3.out txt/txt13.txt
+	./t3.out txt/txt14.txt
 
+runall:
+	./t1.out
+	./t2.out
+	make run3
+	./t5.out
+	./t6.out
+
+re: fclean all
