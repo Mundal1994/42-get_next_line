@@ -1,6 +1,7 @@
 # get_next_line
 
 ABOUT
+
 Project to make a function that reads a line ending with a newline character from a file descriptor.
 
 HOW TO RUN TESTS
@@ -32,4 +33,5 @@ HOW TO RUN TESTS
 
 
 TESTFILES
+
 I got inspiration from another gnl tests (https://travis-ci.org/yyang42/moulitest) in the creation of this gnl-tester (mainly of how they used the sandbox to compare big files and some of the test ideas). The Makefile and the setup of this test is fully my own creation together with the majority of the tests.
