@@ -12,6 +12,8 @@
 
 #include "get_next_line.h"
 
+/*	copies from str to line the previously calculated length	*/
+
 static int	ft_not_end_of_str(const int fd, char **str, char **line, int len)
 {
 	char	*temp;
@@ -31,6 +33,11 @@ static int	ft_not_end_of_str(const int fd, char **str, char **line, int len)
 		ft_strdel(&str[fd]);
 	return (0);
 }
+
+/*
+**	copies from str to line
+**	if it isn't the end of str we will call ft_no_end_of_str
+*/
 
 static int	ft_str_to_line(const int fd, char **str, char **line)
 {
@@ -52,6 +59,11 @@ static int	ft_str_to_line(const int fd, char **str, char **line)
 			return (ERROR);
 	return (0);
 }
+
+/*
+**	copies what has been read into the buffer to a str
+**	if the str contains a nextline we will call ft_str_to_line function
+*/
 
 static int	ft_buf_to_str(const int fd, char **str, char *buf, char **line)
 {
@@ -80,6 +92,8 @@ static int	ft_buf_to_str(const int fd, char **str, char *buf, char **line)
 	return (0);
 }
 
+/*	checks if the file being read is binary	*/
+
 static int	ft_binary_check(char *buf, char *str)
 {
 	int	i;
@@ -97,6 +111,11 @@ static int	ft_binary_check(char *buf, char *str)
 		ft_strdel(&str);
 	return (TRUE);
 }
+
+/*
+**	returns 1, 0 or -1 to indicate if line has been read, no more lines to read or error
+**	the reading of the line gets written to the argument line
+*/
 
 int	get_next_line(const int fd, char **line)
 {	
